@@ -20,4 +20,13 @@ public class InvoiceRepository {
     public Invoice getInvoice(int id) {
         return invoices.get(id);
     }
+
+    public Invoice getInvoiceByOrderId(int orderId) {
+        for (Invoice inv : invoices.values()) {
+            if (inv.getOrderId() == orderId) {
+                return inv;
+            }
+        }
+        return null;
+    }
 }

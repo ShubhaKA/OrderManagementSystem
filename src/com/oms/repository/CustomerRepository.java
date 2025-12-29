@@ -15,4 +15,8 @@ public class CustomerRepository {
     public Customer getCustomer(int id) {
         return customers.get(id);
     }
+
+	public Map<Integer, Customer> getAllCustomers() {
+		return customers;
+	}
 }

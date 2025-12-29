@@ -14,6 +14,7 @@ public class OfflineOrder extends Order {
         updateStatus("READY_FOR_PICKUP");
         updateStatus("PICKED_UP");
         updateStatus("COMPLETED");
+        setCompleted(true);
     }
 
     @Override

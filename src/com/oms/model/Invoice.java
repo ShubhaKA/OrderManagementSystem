@@ -6,10 +6,31 @@ public class Invoice {
     private int orderId;
     private double totalAmount;
 
-    public Invoice(int invoiceId, int orderId, double totalAmount) {
+    // Customer details (always stored as simple data)
+    private int customerId;
+    private String customerName;
+    private String phone;
+    private String email;
+
+    // Online order details
+    private String deliveryAddress;
+    private double shippingCharge;
+
+    public Invoice(int invoiceId, int orderId, double totalAmount,
+                   int customerId, String customerName, String phone, String email,
+                   String deliveryAddress, double shippingCharge) {
+
         this.invoiceId = invoiceId;
         this.orderId = orderId;
         this.totalAmount = totalAmount;
+
+        this.customerId = customerId;
+        this.customerName = customerName;
+        this.phone = phone;
+        this.email = email;
+
+        this.deliveryAddress = deliveryAddress;   // null for offline
+        this.shippingCharge = shippingCharge;     // 0 for offline
     }
 
     public int getInvoiceId() { return invoiceId; }
@@ -18,8 +39,25 @@ public class Invoice {
 
     @Override
     public String toString() {
-        return "Invoice ID: " + invoiceId +
-                "\nOrder ID: " + orderId +
-                "\nTotal Amount: Rs." + totalAmount;
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("============ INVOICE ============\n");
+        sb.append("Invoice ID: ").append(invoiceId).append("\n");
+        sb.append("Order ID: ").append(orderId).append("\n");
+
+        sb.append("Customer ID: ").append(customerId).append("\n");
+        sb.append("Name: ").append(customerName).append("\n");
+        sb.append("Phone: ").append(phone).append("\n");
+        sb.append("Email: ").append(email).append("\n");
+
+        if (deliveryAddress != null) {
+            sb.append("Delivery Address: ").append(deliveryAddress).append("\n");
+            sb.append("Shipping Charge: Rs. ").append(shippingCharge).append("\n");
+        }
+
+        sb.append("Total Amount: Rs. ").append(totalAmount).append("\n");
+        sb.append("=================================\n");
+
+        return sb.toString();
     }
 }

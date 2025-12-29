@@ -1,10 +1,10 @@
 package com.oms.exception;
 
-public class OMSException extends Exception {
+public class NoOrdersException extends Exception {
    
 	private static final long serialVersionUID = 1L;
 
-	public OMSException(String message) {
+	public NoOrdersException(String message) {
         super(message);
     }
 }

@@ -1,5 +1,6 @@
 package com.oms.service;
 
+import com.oms.exception.NoInvoiceFoundException;
 import com.oms.model.Invoice;
 import com.oms.repository.InvoiceRepository;
 
@@ -11,14 +12,24 @@ public class InvoiceService {
         this.repo = repo;
     }
 
-    public void printInvoice(int id) {
-        Invoice invoice = repo.getInvoice(id);
+    public Invoice getInvoice(int invoiceId) throws NoInvoiceFoundException {
+        Invoice invoice = repo.getInvoice(invoiceId);
+
         if (invoice == null) {
-            System.out.println("Invoice not found!");
-            return;
+            throw new NoInvoiceFoundException("No Invoice Found!");
         }
-        System.out.println("========== INVOICE ==========");
-        System.out.println(invoice);
-        System.out.println("=============================");
+        return invoice;
+    }
+
+    public void printInvoice(Invoice invoice) {
+        System.out.println(invoice.toString());
+    }
+    
+    public void printInvoice(int invoiceId) throws NoInvoiceFoundException {
+        Invoice invoice = repo.getInvoice(invoiceId);
+        if (invoice == null) {
+            throw new NoInvoiceFoundException("Invoice not found!");
+        }
+        printInvoice(invoice); 
     }
 }

@@ -1,5 +1,8 @@
 package com.oms.service;
 
+import java.util.Map;
+
+import com.oms.exception.NoOrdersException;
 import com.oms.exception.OMSException;
 import com.oms.model.*;
 import com.oms.repository.InvoiceRepository;
@@ -19,61 +22,115 @@ public class OrderService {
         this.invoiceRepo = invoiceRepo;
     }
 
-    // Create order
+    public Order getOrder(int oid) {
+        return orderRepo.getOrder(oid);
+    }
+
     public Order createOrder(Order o) {
         orderRepo.addOrder(o);
         return o;
     }
 
-    // Add item to existing order
+    // Add item to order (merge quantities)
     public void addItemToOrder(int orderId, OrderItem item) throws OMSException {
+
         Order order = orderRepo.getOrder(orderId);
-        if (order == null)
-            throw new OMSException("Order not found!");
+        if (order == null) throw new OMSException("Order not found!");
 
-        inventory.checkStock(
-                item.getProduct().getProductId(),
-                item.getQuantity()
-        );
+        String productId = item.getProduct().getProductId();
 
-        order.addItem(item);
+        OrderItem existing = null;
+        for (OrderItem oi : order.getItems()) {
+            if (oi.getProduct().getProductId().equals(productId)) {
+                existing = oi;
+                break;
+            }
+        }
+
+        if (existing != null) {
+            int newQty = existing.getQuantity() + item.getQuantity();
+            inventory.checkStock(productId, newQty);
+            existing.setQuantity(newQty);
+        } else {
+            inventory.checkStock(productId, item.getQuantity());
+            order.addItem(item);
+        }
     }
 
-    // Complete order and generate invoice
+
+    // Complete order + prevent duplicate invoices
     public Invoice completeOrder(int orderId) throws OMSException {
 
         Order order = orderRepo.getOrder(orderId);
-        if (order == null)
-            throw new OMSException("Order not found!");
+        if (order == null) throw new OMSException("Order not found!");
 
-        // Step 1: validate stock
-        for (OrderItem item : order.getItems()) {
-            inventory.checkStock(
-                    item.getProduct().getProductId(),
-                    item.getQuantity()
-            );
+        // Prevent duplicate invoice
+        if (order.isInvoiceGenerated()) {
+            if (order instanceof OnlineOrder)
+                throw new OMSException("Order already delivered! Invoice already generated.");
+            else
+                throw new OMSException("Order already completed! Invoice already generated.");
         }
 
-        // Step 2: reduce stock
+        // Stock checks
         for (OrderItem item : order.getItems()) {
-            inventory.reduceStock(
-                    item.getProduct().getProductId(),
-                    item.getQuantity()
-            );
+            inventory.checkStock(item.getProduct().getProductId(), item.getQuantity());
+        }
+        for (OrderItem item : order.getItems()) {
+            inventory.reduceStock(item.getProduct().getProductId(), item.getQuantity());
         }
 
-        // Step 3: finalize order
         order.calculateTotal();
         order.fulfillOrder();
 
-        // Step 4: generate invoice
+        Customer c = order.getCustomer();
+
+        String address = null;
+        double shipping = 0;
+
+        if (order instanceof OnlineOrder online) {
+            address = online.getDeliveryAddress();
+            shipping = online.getShippingCharge();
+        }
+
         Invoice invoice = new Invoice(
                 invoiceRepo.generateInvoiceId(),
                 orderId,
-                order.getTotalAmount()
+                order.getTotalAmount(),
+                c.getCustomerId(),
+                c.getName(),
+                c.getPhone(),
+                c.getEmail(),
+                address,
+                shipping
         );
 
         invoiceRepo.addInvoice(invoice);
+        order.setInvoiceGenerated(true);
+
         return invoice;
+    }
+
+
+    public Map<Integer, Order> getAllOrders() throws NoOrdersException {
+        Map<Integer, Order> orders = orderRepo.getAllOrders();
+
+        if (orders == null || orders.isEmpty()) {
+            throw new NoOrdersException("No orders available!");
+        }
+        return orders;
+    }
+
+    public void updateDeliveryStatus(int orderId, String status) throws OMSException {
+
+        Order order = orderRepo.getOrder(orderId);
+        if (order == null)
+            throw new OMSException("Order not found!");
+
+        if (!(order instanceof OnlineOrder))
+            throw new OMSException("Delivery status can be updated only for Online Orders!");
+
+        OnlineOrder online = (OnlineOrder) order;
+        online.updateDeliveryStatus(status);
     }
 }

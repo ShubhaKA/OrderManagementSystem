@@ -31,6 +31,6 @@ public class FileDataInitializer {
                 FileDataLoader.loadInventory("data/inventory.txt");
         inventory.forEach(inventoryRepo::setStock);
 
-        System.out.println("✔ Data loaded successfully from files");
+        System.out.println("Data loaded successfully from files");
     }
 }
