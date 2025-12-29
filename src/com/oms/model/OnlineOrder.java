@@ -1,7 +1,7 @@
 package com.oms.model;
 
 public class OnlineOrder extends Order {
-	
+
     private String deliveryAddress;
     private double shippingCharge;
 
@@ -11,31 +11,23 @@ public class OnlineOrder extends Order {
         this.shippingCharge = shippingCharge;
     }
 
-    public String getDeliveryAddress() {
-        return deliveryAddress;
-    }
-
-    public double getShippingCharge() {
-        return shippingCharge;
-    }
-
-	@Override
-	public void fulfillOrder() {
-        updateStatus("PACKED");
-        updateStatus("SHIPPED");
-        updateStatus("DELIVERED");		
-	}
-	
     @Override
     public void calculateTotal() {
         super.calculateTotal();
-        this.totalAmount += shippingCharge;
+        totalAmount += shippingCharge;
+    }
+
+    @Override
+    public void fulfillOrder() {
+        updateStatus("PACKED");
+        updateStatus("SHIPPED");
+        updateStatus("DELIVERED");
     }
 
     @Override
     public String toString() {
         return super.toString() +
-                ", Delivery Address: " + deliveryAddress +
-                ", Shipping Charge: Rs." + shippingCharge;
+                ", Delivery: " + deliveryAddress +
+                ", Shipping: Rs." + shippingCharge;
     }
 }

@@ -10,13 +10,8 @@ public class OrderItem {
         this.quantity = quantity;
     }
 
-    public Product getProduct() {
-        return product;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
+    public Product getProduct() { return product; }
+    public int getQuantity() { return quantity; }
 
     public double getSubtotal() {
         return product.getPrice() * quantity;
@@ -24,7 +19,6 @@ public class OrderItem {
 
     @Override
     public String toString() {
-        return product.getName() + " x " + quantity +
-               " = Rs." + getSubtotal();
+        return product.getName() + " x " + quantity + " = Rs." + getSubtotal();
     }
 }

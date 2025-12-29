@@ -1,42 +1,25 @@
 package com.oms.model;
 
-import java.util.Date;
-
 public class Invoice {
 
     private int invoiceId;
     private int orderId;
-    private double amount;
-    private Date invoiceDate;
+    private double totalAmount;
 
-    public Invoice(int invoiceId, int orderId, double amount) {
+    public Invoice(int invoiceId, int orderId, double totalAmount) {
         this.invoiceId = invoiceId;
         this.orderId = orderId;
-        this.amount = amount;
-        this.invoiceDate = new Date();
+        this.totalAmount = totalAmount;
     }
 
-    public int getInvoiceId() {
-        return invoiceId;
-    }
-
-    public int getOrderId() {
-        return orderId;
-    }
-
-    public double getAmount() {
-        return amount;
-    }
-
-    public Date getInvoiceDate() {
-        return invoiceDate;
-    }
+    public int getInvoiceId() { return invoiceId; }
+    public int getOrderId() { return orderId; }
+    public double getTotalAmount() { return totalAmount; }
 
     @Override
     public String toString() {
         return "Invoice ID: " + invoiceId +
-               ", Order ID: " + orderId +
-               ", Amount: Rs." + amount +
-               ", Date: " + invoiceDate;
+                "\nOrder ID: " + orderId +
+                "\nTotal Amount: Rs." + totalAmount;
     }
 }

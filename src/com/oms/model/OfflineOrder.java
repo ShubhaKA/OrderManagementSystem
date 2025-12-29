@@ -1,16 +1,12 @@
 package com.oms.model;
 
-public class OfflineOrder extends Order{
+public class OfflineOrder extends Order {
 
     private String storeLocation;
 
     public OfflineOrder(int orderId, Customer customer, String storeLocation) {
         super(orderId, customer);
         this.storeLocation = storeLocation;
-    }
-
-    public String getStoreLocation() {
-        return storeLocation;
     }
 
     @Override
