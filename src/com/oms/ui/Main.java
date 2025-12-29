@@ -2,6 +2,7 @@ package com.oms.ui;
 
 import java.util.Scanner;
 
+import com.oms.data.FileDataInitializer;
 import com.oms.exception.OMSException;
 import com.oms.model.*;
 import com.oms.repository.*;
@@ -13,31 +14,33 @@ public class Main {
 
         Scanner sc = new Scanner(System.in);
 
+        // ---------- Repositories ----------
         ProductRepository productRepo = new ProductRepository();
         CustomerRepository customerRepo = new CustomerRepository();
+        InventoryRepository inventoryRepo = new InventoryRepository();
         OrderRepository orderRepo = new OrderRepository();
         InvoiceRepository invoiceRepo = new InvoiceRepository();
-        InventoryRepository inventoryRepo = new InventoryRepository();
 
-        InventoryService inventoryService = new InventoryService(inventoryRepo);
-        OrderService orderService = new OrderService(inventoryService, orderRepo, invoiceRepo);
-        InvoiceService invoiceService = new InvoiceService(invoiceRepo);
+        // ---------- Load data from files ----------
+        FileDataInitializer.initializeData(
+                productRepo,
+                customerRepo,
+                inventoryRepo
+        );
 
-        // ----------------- SAMPLE DATA -----------------
-        productRepo.addProduct(new Product("P101", "Laptop", 55000));
-        productRepo.addProduct(new Product("P102", "Mouse", 500));
-        productRepo.addProduct(new Product("P103", "Keyboard", 1500));
+        // ---------- Services ----------
+        InventoryService inventoryService =
+                new InventoryService(inventoryRepo);
 
-        inventoryRepo.addStock("P101", 10);
-        inventoryRepo.addStock("P102", 50);
-        inventoryRepo.addStock("P103", 20);
+        OrderService orderService =
+                new OrderService(inventoryService, orderRepo, invoiceRepo);
 
-        customerRepo.addCustomer(new Customer(1, "Shubha", "shubha@gmail.com", "9876543210", "Bangalore"));
+        InvoiceService invoiceService =
+                new InvoiceService(invoiceRepo);
 
-        int orderIdCounter = 1;
+        int choice;
 
-        while (true) {
-
+        do {
             System.out.println("\n===== ORDER MANAGEMENT SYSTEM =====");
             System.out.println("1. Create Online Order");
             System.out.println("2. Create Offline Order");
@@ -47,55 +50,71 @@ public class Main {
             System.out.println("6. Exit");
             System.out.print("Enter choice: ");
 
-            int ch = sc.nextInt();
-            sc.nextLine();
+            choice = sc.nextInt();
 
             try {
-                switch (ch) {
+                switch (choice) {
 
-                    case 1:
-                        System.out.println("Enter Customer ID: ");
-                        int cid = sc.nextInt(); sc.nextLine();
-                        Customer cust = customerRepo.getCustomer(cid);
-                        if (cust == null) {
-                            System.out.println("Customer not found!");
-                            break;
-                        }
+                    case 1: {
+                        System.out.print("Enter Order ID: ");
+                        int orderId = sc.nextInt();
 
+                        System.out.print("Enter Customer ID: ");
+                        int custId = sc.nextInt();
+
+                        sc.nextLine(); // clear buffer
                         System.out.print("Delivery Address: ");
-                        String da = sc.nextLine();
+                        String address = sc.nextLine();
 
                         System.out.print("Shipping Charge: ");
                         double ship = sc.nextDouble();
 
-                        OnlineOrder on = new OnlineOrder(orderIdCounter++, cust, da, ship);
-                        orderService.createOrder(on);
-                        System.out.println("Online Order Created!");
-                        break;
-
-                    case 2:
-                        System.out.println("Enter Customer ID: ");
-                        int cid2 = sc.nextInt(); sc.nextLine();
-                        Customer cust2 = customerRepo.getCustomer(cid2);
-                        if (cust2 == null) {
+                        Customer c = customerRepo.getCustomer(custId);
+                        if (c == null) {
                             System.out.println("Customer not found!");
                             break;
                         }
 
-                        System.out.print("Store Location: ");
-                        String sl = sc.nextLine();
+                        Order order = new OnlineOrder(orderId, c, address, ship);
+                        orderService.createOrder(order);
 
-                        OfflineOrder off = new OfflineOrder(orderIdCounter++, cust2, sl);
-                        orderService.createOrder(off);
+                        System.out.println("Online Order Created!");
+                        break;
+                    }
+
+                    case 2: {
+                        System.out.print("Enter Order ID: ");
+                        int orderId = sc.nextInt();
+
+                        System.out.print("Enter Customer ID: ");
+                        int custId = sc.nextInt();
+
+                        sc.nextLine();
+                        System.out.print("Store Location: ");
+                        String store = sc.nextLine();
+
+                        Customer c = customerRepo.getCustomer(custId);
+                        if (c == null) {
+                            System.out.println("Customer not found!");
+                            break;
+                        }
+
+                        Order order = new OfflineOrder(orderId, c, store);
+                        orderService.createOrder(order);
+
                         System.out.println("Offline Order Created!");
                         break;
+                    }
 
-                    case 3:
+                    case 3: {
                         System.out.print("Order ID: ");
-                        int oid = sc.nextInt(); sc.nextLine();
+                        int orderId = sc.nextInt();
 
                         System.out.print("Product ID: ");
-                        String pid = sc.nextLine();
+                        String pid = sc.next();
+
+                        System.out.print("Quantity: ");
+                        int qty = sc.nextInt();
 
                         Product p = productRepo.getProduct(pid);
                         if (p == null) {
@@ -103,35 +122,43 @@ public class Main {
                             break;
                         }
 
-                        System.out.print("Quantity: ");
-                        int qty = sc.nextInt();
+                        OrderItem item = new OrderItem(p, qty);
+                        orderService.addItemToOrder(orderId, item);
 
-                        orderService.addItemToOrder(oid, new OrderItem(p, qty));
                         System.out.println("Item Added!");
                         break;
+                    }
 
-                    case 4:
+                    case 4: {
                         System.out.print("Order ID: ");
-                        int co = sc.nextInt();
+                        int orderId = sc.nextInt();
 
-                        Invoice inv = orderService.completeOrder(co);
+                        Invoice inv = orderService.completeOrder(orderId);
                         System.out.println("Order Completed! Invoice ID: " + inv.getInvoiceId());
                         break;
+                    }
 
-                    case 5:
+                    case 5: {
                         System.out.print("Invoice ID: ");
-                        int iid = sc.nextInt();
-                        invoiceService.printInvoice(iid);
+                        int invId = sc.nextInt();
+
+                        invoiceService.printInvoice(invId);
                         break;
+                    }
 
                     case 6:
-                        System.out.println("Exiting...");
-                        System.exit(0);
+                        System.out.println("Thank you!");
+                        break;
+
+                    default:
+                        System.out.println("Invalid choice!");
                 }
 
             } catch (OMSException e) {
                 System.out.println("Error: " + e.getMessage());
             }
-        }
+        } while (choice != 6);
+
+        sc.close();
     }
 }

@@ -5,23 +5,24 @@ import com.oms.repository.InventoryRepository;
 
 public class InventoryService {
 
-    private InventoryRepository repo;
+    private InventoryRepository inventoryRepo;
 
-    public InventoryService(InventoryRepository repo) {
-        this.repo = repo;
+    public InventoryService(InventoryRepository inventoryRepo) {
+        this.inventoryRepo = inventoryRepo;
     }
 
-    public void checkStock(String productId, int qty) throws OMSException {
-        if (repo.getStock(productId) < qty) {
-            throw new OMSException("Insufficient stock!");
+    // Check if enough stock is available
+    public void checkStock(String productId, int quantity) throws OMSException {
+        int available = inventoryRepo.getStock(productId);
+        if (available < quantity) {
+            throw new OMSException(
+                "Insufficient stock for product: " + productId
+            );
         }
     }
 
-    public void reduceStock(String productId, int qty) {
-        repo.reduceStock(productId, qty);
-    }
-
-    public void addStock(String productId, int qty) {
-        repo.addStock(productId, qty);
+    // Reduce stock after order confirmation
+    public void reduceStock(String productId, int quantity) {
+        inventoryRepo.reduceStock(productId, quantity);
     }
 }

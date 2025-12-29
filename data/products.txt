@@ -1,0 +1,10 @@
+101,Laptop,55000
+102,Mobile,20000
+103,Headphones,2000
+104,Keyboard,1500
+105,Mouse,800
+106,Monitor,12000
+107,Printer,7500
+108,Tablet,25000
+109,SmartWatch,8000
+110,Speaker,3000
