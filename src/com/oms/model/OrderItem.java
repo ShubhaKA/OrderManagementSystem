@@ -10,7 +10,11 @@ public class OrderItem {
         this.quantity = quantity;
     }
 
-    public Product getProduct() { return product; }
+    public OrderItem() {
+		// TODO Auto-generated constructor stub
+	}
+
+	public Product getProduct() { return product; }
     public int getQuantity() { return quantity; }
 
     public void setQuantity(int qty) {
