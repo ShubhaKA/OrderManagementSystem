@@ -23,14 +23,14 @@ class InventoryServiceTest {
 
     @Test
     void testCheckStockSuccess() throws OMSException {
-        assertDoesNotThrow(() -> service.checkStock("P1", 5));
+        assertDoesNotThrow(() -> service.hasStock("P1", 5));
     }
 
     @Test
     void testCheckStockFailure() {
         OMSException ex = assertThrows(
                 OMSException.class,
-                () -> service.checkStock("P1", 20)
+                () -> service.hasStock("P1", 20)
         );
         assertEquals("Insufficient stock for product: P1", ex.getMessage());
     }

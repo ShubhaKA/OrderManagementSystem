@@ -1,28 +1,34 @@
 package com.oms.service;
 
-import com.oms.exception.OMSException;
 import com.oms.repository.InventoryRepository;
 
 public class InventoryService {
 
     private InventoryRepository inventoryRepo;
 
-    public InventoryService(InventoryRepository inventoryRepo) {
-        this.inventoryRepo = inventoryRepo;
+    public InventoryService(InventoryRepository repo) {
+        this.inventoryRepo = repo;
     }
 
-    // Check if enough stock is available
-    public void checkStock(String productId, int quantity) throws OMSException {
-        int available = inventoryRepo.getStock(productId);
-        if (available < quantity) {
-            throw new OMSException(
-                "Insufficient stock for product: " + productId
-            );
-        }
+ // Check if product exists and has stock
+    public boolean hasStock(String productId, int qty) {
+        return inventoryRepo.hasStock(productId, qty);
     }
 
-    // Reduce stock after order confirmation
-    public void reduceStock(String productId, int quantity) {
-        inventoryRepo.reduceStock(productId, quantity);
+    // REDUCE STOCK AFTER ORDER COMPLETION
+    public void reduceStock(String productId, int qty) {
+        inventoryRepo.reduceStock(productId, qty);
+    }
+
+ // Get available quantity
+    public int getStock(String productId) {
+        return inventoryRepo.getStock(productId);
+    }
+
+    // View full inventory
+    public void printInventory() {
+        System.out.println("===== INVENTORY =====");
+        inventoryRepo.getAllStock().forEach((id, qty) ->
+                System.out.println("Product: " + id + " | Qty: " + qty));
     }
 }

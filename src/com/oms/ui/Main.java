@@ -1,7 +1,6 @@
 package com.oms.ui;
 
 import java.util.Scanner;
-
 import com.oms.data.FileDataInitializer;
 import com.oms.exception.NoOrdersException;
 import com.oms.exception.OMSException;
@@ -10,7 +9,6 @@ import com.oms.repository.*;
 import com.oms.service.*;
 
 public class Main {
-
     public static void main(String[] args) {
 
         Scanner sc = new Scanner(System.in);
@@ -106,8 +104,8 @@ public class Main {
 
                 System.out.print("Product ID: ");
                 String pid = sc.nextLine();
-
                 Product p = productRepo.getProduct(pid);
+
                 if (p == null) {
                     System.out.println("Product not found!");
                     break;
@@ -128,6 +126,7 @@ public class Main {
             case 4: // COMPLETE ORDER
                 System.out.print("Order ID: ");
                 int cid = sc.nextInt();
+
                 try {
                     Invoice inv = orderService.completeOrder(cid);
                     System.out.println("Order Completed! Invoice ID: " + inv.getInvoiceId());
@@ -140,6 +139,7 @@ public class Main {
             case 5: // PRINT INVOICE
                 System.out.print("Invoice ID: ");
                 int invId = sc.nextInt();
+
                 try {
                     invoiceService.printInvoice(invId);
                 } catch (Exception e) {
@@ -162,8 +162,8 @@ public class Main {
             // ---------------------------------------
             case 8: // VIEW ORDERS
                 System.out.println("===== ALL ORDERS =====");
-                try {
 
+                try {
                     if (orderRepo.getAllOrders().isEmpty()) {
                         throw new NoOrdersException("No orders found!");
                     }
@@ -176,7 +176,6 @@ public class Main {
                         }
                         System.out.println("--------------------------------");
                     }
-
                 } catch (NoOrdersException e) {
                     System.out.println(e.getMessage());
                 }

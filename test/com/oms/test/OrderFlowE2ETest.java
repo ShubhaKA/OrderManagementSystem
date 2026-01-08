@@ -31,7 +31,7 @@ class OrderFlowE2ETest {
         inventoryRepo = new InventoryRepository();
         inventoryService = new InventoryService(inventoryRepo);
 
-        // preload stock
+        //preload stock
         p1 = new Product("P1", "Pen", 10);
         inventoryRepo.addStock("P1", 5);  // available stock = 5
     }
@@ -40,7 +40,7 @@ class OrderFlowE2ETest {
     void testEndToEndOrderFlow() throws OMSException {
         
         // Step 1: Check stock before adding
-        inventoryService.checkStock("P1", 2);
+        inventoryService.hasStock("P1", 2);
 
         // Step 2: Add item
         order.addItem(new OrderItem(p1, 2));

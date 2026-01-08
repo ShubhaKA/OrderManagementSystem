@@ -9,9 +9,11 @@ public abstract class Order {
     protected int orderId;
     protected Customer customer;
     protected List<OrderItem> items = new ArrayList<>();
-    protected String status = "CREATED";
+
+    protected String status = "CREATED";     // Default order status
     protected double totalAmount;
     protected Date orderDate = new Date();
+
     protected List<String> trackingUpdates = new ArrayList<>();
 
     private boolean invoiceGenerated = false;
@@ -20,7 +22,10 @@ public abstract class Order {
     public Order(int orderId, Customer customer) {
         this.orderId = orderId;
         this.customer = customer;
+        //trackingUpdates.add("Order created on: " + orderDate);
     }
+
+    // ---------------- GETTERS ----------------
 
     public int getOrderId() { return orderId; }
     public Customer getCustomer() { return customer; }
@@ -30,6 +35,9 @@ public abstract class Order {
     public boolean isInvoiceGenerated() { return invoiceGenerated; }
     public boolean isCompleted() { return completed; }
     public Date getOrderDate() { return orderDate; }
+    public List<String> getTrackingUpdates() { return trackingUpdates; }
+
+    // ---------------- SETTERS ----------------
 
     public void setInvoiceGenerated(boolean invoiceGenerated) {
         this.invoiceGenerated = invoiceGenerated;
@@ -39,28 +47,23 @@ public abstract class Order {
         this.completed = completed;
     }
 
+    // ---------------- ORDER FUNCTIONS ----------------
+
     public void addItem(OrderItem item) {
         items.add(item);
     }
 
     public void calculateTotal() {
         totalAmount = items.stream()
-                .mapToDouble(i -> i.getSubtotal())
+                .mapToDouble(OrderItem::getSubtotal)
                 .sum();
     }
 
-    public void updateTotalAmount() {
-        calculateTotal();
-    }
-
-    public void updateStatus(String newStatus) {
-        status = newStatus;
-        trackingUpdates.add("Status changed to: " + newStatus);
-    }
-
-    public List<String> getTrackingUpdates() {
-        return trackingUpdates;
-    }
+	/*
+	 * public void updateStatus(String newStatus) { this.status = newStatus;
+	 * trackingUpdates.add("Order status changed to: " + newStatus + " on " + new
+	 * Date()); }
+	 */
 
     public abstract void fulfillOrder();
 
@@ -69,7 +72,7 @@ public abstract class Order {
         return "Order ID: " + orderId +
                 ", Customer: " + customer.getName() +
                 ", Total: Rs." + totalAmount +
-                ", Status: " + status +
+                //", Status: " + status +
                 ", Date: " + orderDate;
     }
 }

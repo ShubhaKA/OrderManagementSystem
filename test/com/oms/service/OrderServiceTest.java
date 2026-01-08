@@ -61,7 +61,7 @@ public class OrderServiceTest {
         Order order = new OfflineOrder(10, c, "StoreA");
 
         when(orderRepo.getOrder(10)).thenReturn(order);
-        doNothing().when(inventory).checkStock("P1", 2);
+        doNothing().when(inventory).hasStock("P1", 2);
 
         orderService.addItemToOrder(10, item);
 
@@ -82,7 +82,7 @@ public class OrderServiceTest {
 
         when(orderRepo.getOrder(10)).thenReturn(order);
 
-        doNothing().when(inventory).checkStock("P1", 4);
+        doNothing().when(inventory).hasStock("P1", 4);
 
         orderService.addItemToOrder(10, newItem);
 
@@ -106,7 +106,7 @@ public class OrderServiceTest {
         when(orderRepo.getOrder(10)).thenReturn(order);
 
         // Stock checks
-        doNothing().when(inventory).checkStock("P1", 2);
+        doNothing().when(inventory).hasStock("P1", 2);
         doNothing().when(inventory).reduceStock("P1", 2);
 
         // Invoice generation

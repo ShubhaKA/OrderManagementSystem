@@ -18,17 +18,17 @@ public class FileDataInitializer {
 
         // Load Products
         Map<String, Product> products =
-                FileDataLoader.loadProducts("data/products.txt");
+                FileDataLoader.loadProducts("data/products.csv");
         products.values().forEach(productRepo::addProduct);
 
         // Load Customers
         Map<Integer, Customer> customers =
-                FileDataLoader.loadCustomers("data/customers.txt");
+                FileDataLoader.loadCustomers("data/customers.csv");
         customers.values().forEach(customerRepo::addCustomer);
 
         // Load Inventory
         Map<String, Integer> inventory =
-                FileDataLoader.loadInventory("data/inventory.txt");
+                FileDataLoader.loadInventory("data/inventory.csv");
         inventory.forEach(inventoryRepo::setStock);
 
         System.out.println("Data loaded successfully from files");
