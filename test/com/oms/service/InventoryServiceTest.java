@@ -36,7 +36,7 @@ class InventoryServiceTest {
     }
 
     @Test
-    void testReduceStock() {
+    void testReduceStock() throws OMSException {
         service.reduceStock("P1", 3);
         assertEquals(7, repo.getStock("P1"));
     }

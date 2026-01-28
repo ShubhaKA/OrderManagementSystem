@@ -1,5 +1,7 @@
 package com.oms.ui;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import com.oms.data.FileDataInitializer;
 import com.oms.exception.NoOrdersException;
@@ -37,106 +39,124 @@ public class Main {
         // ========= MAIN MENU ==========
         while (true) {
             System.out.println("\n===== ORDER MANAGEMENT SYSTEM =====");
-            System.out.println("1. Create Online Order");
-            System.out.println("2. Create Offline Order");
-            System.out.println("3. Add Item to Order");
-            System.out.println("4. Complete Order");
-            System.out.println("5. Print Invoice");
-            System.out.println("6. View All Products");
-            System.out.println("7. View All Customers");
-            System.out.println("8. View All Orders");
-            System.out.println("9. Track Online Order");
-            System.out.println("10. Update Delivery Status");
-            System.out.println("11. Exit");
+            System.out.println("1. Create Order");
+            System.out.println("2. Print Invoice");
+            System.out.println("3. View All Products");
+            System.out.println("4. View All Customers");
+            System.out.println("5. View All Orders");
+            System.out.println("6. Track Online Order");
+            System.out.println("7. Update Delivery Status");
+            System.out.println("8. Exit");
             System.out.print("Enter choice: ");
 
             choice = sc.nextInt();
 
             switch (choice) {
 
-            // ---------------------------------------
-            case 1: // ONLINE ORDER
+            case 1: // CREATE ORDER
+            	System.out.println("Select Type of Order");
+                System.out.println("1. Online Order");
+                System.out.println("2. Offline Order");
+                int type = sc.nextInt();
+                sc.nextLine(); 
+
                 System.out.print("Enter Customer ID: ");
-                int custId1 = sc.nextInt();
-                Customer c1 = customerRepo.getCustomer(custId1);
-                if (c1 == null) {
+                int custId = sc.nextInt();
+                sc.nextLine(); 
+
+                Customer customer = customerRepo.getCustomer(custId);
+                if (customer == null) {
                     System.out.println("Customer not found!");
                     break;
                 }
-                sc.nextLine();
-                System.out.print("Delivery Address: ");
-                String address = sc.nextLine();
-                System.out.print("Shipping Charge: ");
-                double shipping = sc.nextDouble();
 
-                int orderId1 = orderRepo.generateOrderId();
-                Order onlineOrder = new OnlineOrder(orderId1, c1, address, shipping);
-                orderService.createOrder(onlineOrder);
+                int orderId = orderRepo.generateOrderId();
+                Order order;
 
-                System.out.println("Online Order Created! Order ID: " + orderId1);
-                break;
+                if (type == 1) {
+                    System.out.print("Delivery Address: ");
+                    String address = sc.nextLine();
 
-            // ---------------------------------------
-            case 2: // OFFLINE ORDER
-                System.out.print("Enter Customer ID: ");
-                int custId2 = sc.nextInt();
-                Customer c2 = customerRepo.getCustomer(custId2);
-                if (c2 == null) {
-                    System.out.println("Customer not found!");
-                    break;
-                }
-                sc.nextLine();
-                System.out.print("Store Location: ");
-                String store = sc.nextLine();
+                    System.out.print("Shipping Charge: ");
+                    double shipping = sc.nextDouble();
+                    sc.nextLine(); 
 
-                int orderId2 = orderRepo.generateOrderId();
-                Order offlineOrder = new OfflineOrder(orderId2, c2, store);
-                orderService.createOrder(offlineOrder);
-
-                System.out.println("Offline Order Created! Order ID: " + orderId2);
-                break;
-
-            // ---------------------------------------
-            case 3: // ADD ITEM
-                System.out.print("Order ID: ");
-                int oid = sc.nextInt();
-                sc.nextLine();
-
-                System.out.print("Product ID: ");
-                String pid = sc.nextLine();
-                Product p = productRepo.getProduct(pid);
-
-                if (p == null) {
-                    System.out.println("Product not found!");
-                    break;
+                    order = new OnlineOrder(orderId, customer, address, shipping);
+                } else {
+                    System.out.print("Store Location: ");
+                    String store = sc.nextLine();
+                    order = new OfflineOrder(orderId, customer, store);
                 }
 
-                System.out.print("Quantity: ");
-                int qty = sc.nextInt();
+                List<OrderItem> items = new ArrayList<>();
+
+                while (true) {
+
+                    System.out.print("Product ID (or 'done'): ");
+                    String pid = sc.nextLine().trim();  
+
+                    if (pid.equalsIgnoreCase("done")) {
+                        break;
+                    }
+
+                    Product product = productRepo.getProduct(pid);
+                    if (product == null) {
+                        System.out.println("Invalid product!");
+                        continue;
+                    }
+
+                    int availableQty = inventoryService.getStock(pid);
+                    //System.out.println("Available Quantity: " + availableQty);
+
+                    if (availableQty == 0) {
+                        System.out.println("Product is OUT OF STOCK. Choose another product.");
+                        continue;
+                    }
+
+                    System.out.print("Enter Quantity: ");
+                    int qty = sc.nextInt();
+                    sc.nextLine(); // ✅ consume newline
+
+                    if (qty <= 0) {
+                        System.out.println("Quantity must be greater than zero!");
+                        continue;
+                    }
+
+                    if (qty > availableQty) {
+                        System.out.println(
+                            "Insufficient stock! Available quantity is: " + availableQty
+                        );
+                        continue;
+                    }
+
+                    // ✅ Reduce stock immediately (REAL-TIME update)
+                    inventoryService.reduceStock(pid, qty);
+
+                    items.add(new OrderItem(product, qty));
+                    System.out.println("Item added successfully.");
+                }
 
                 try {
-                    orderService.addItemToOrder(oid, new OrderItem(p, qty));
-                    System.out.println("Item Added!");
-                } catch (Exception e) {
-                    System.out.println("Error: " + e.getMessage());
+                    Invoice invoice = orderService.createOrderWithItems(order, items);
+
+                    System.out.println("Order Created! Order ID: " + orderId);
+
+                    if (invoice != null) {
+                        System.out.println("Order Completed! Invoice ID: " + invoice.getInvoiceId());
+                    } else {
+                        System.out.println("Online Order Created. Track delivery status.");
+                    }
+
+                } catch (OMSException e) {
+                    System.out.println("❌ " + e.getMessage());
+                    System.out.println("Please re-create the order with available products.");
                 }
+
                 break;
 
-            // ---------------------------------------
-            case 4: // COMPLETE ORDER
-                System.out.print("Order ID: ");
-                int cid = sc.nextInt();
-
-                try {
-                    Invoice inv = orderService.completeOrder(cid);
-                    System.out.println("Order Completed! Invoice ID: " + inv.getInvoiceId());
-                } catch (Exception e) {
-                    System.out.println("Error: " + e.getMessage());
-                }
-                break;
 
             // ---------------------------------------
-            case 5: // PRINT INVOICE
+            case 2: // PRINT INVOICE
                 System.out.print("Invoice ID: ");
                 int invId = sc.nextInt();
 
@@ -148,19 +168,19 @@ public class Main {
                 break;
 
             // ---------------------------------------
-            case 6: // VIEW PRODUCTS
+            case 3: // VIEW PRODUCTS
                 System.out.println("===== AVAILABLE PRODUCTS =====");
                 productRepo.getAllProducts().values().forEach(System.out::println);
                 break;
 
             // ---------------------------------------
-            case 7: // VIEW CUSTOMERS
+            case 4: // VIEW CUSTOMERS
                 System.out.println("===== CUSTOMERS =====");
                 customerRepo.getAllCustomers().values().forEach(System.out::println);
                 break;
 
             // ---------------------------------------
-            case 8: // VIEW ORDERS
+            case 5: // VIEW ORDERS
                 System.out.println("===== ALL ORDERS =====");
 
                 try {
@@ -182,7 +202,7 @@ public class Main {
                 break;
 
             // ---------------------------------------
-            case 9: // TRACK ONLINE ORDER
+            case 6: // TRACK ONLINE ORDER
                 System.out.print("Enter Order ID: ");
                 int oidTrack = sc.nextInt();
 
@@ -197,7 +217,7 @@ public class Main {
                 break;
 
             // ---------------------------------------
-            case 10: // UPDATE DELIVERY STATUS
+            case 7: // UPDATE DELIVERY STATUS
                 System.out.print("Enter Order ID: ");
                 int oidStat = sc.nextInt();
                 sc.nextLine();
@@ -214,7 +234,7 @@ public class Main {
                 break;
 
             // ---------------------------------------
-            case 11:
+            case 8:
                 System.out.println("Exiting...");
                 return;
 

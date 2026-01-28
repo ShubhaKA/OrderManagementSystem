@@ -1,43 +1,126 @@
 package com.oms.model;
 
+import java.util.List;
+
 public class Invoice {
 
     private int invoiceId;
     private int orderId;
     private double totalAmount;
-
-    // Customer details (always stored as simple data)
     private int customerId;
     private String customerName;
     private String phone;
     private String email;
-
-    // Online order details
     private String deliveryAddress;
     private double shippingCharge;
 
+    // ✅ NEW
+    private List<OrderItem> items;
+
     public Invoice(int invoiceId, int orderId, double totalAmount,
-                   int customerId, String customerName, String phone, String email,
-                   String deliveryAddress, double shippingCharge) {
+                   int customerId, String customerName, String phone,
+                   String email, String deliveryAddress,
+                   double shippingCharge,
+                   List<OrderItem> items) {
 
         this.invoiceId = invoiceId;
         this.orderId = orderId;
         this.totalAmount = totalAmount;
-
         this.customerId = customerId;
         this.customerName = customerName;
         this.phone = phone;
         this.email = email;
+        this.deliveryAddress = deliveryAddress;
+        this.shippingCharge = shippingCharge;
+        this.items = items;
+    }
+    
+    public Invoice(int invoiceId, int orderId, double totalAmount,
+            int customerId, String customerName, String phone,
+            String email, String deliveryAddress,
+            double shippingCharge) {
 
-        this.deliveryAddress = deliveryAddress;   // null for offline
-        this.shippingCharge = shippingCharge;     // 0 for offline
+ this(invoiceId, orderId, totalAmount,
+      customerId, customerName, phone,
+      email, deliveryAddress, shippingCharge,
+      null); // items not available
+}
+
+    public List<OrderItem> getItems() {
+        return items;
     }
 
-    public int getInvoiceId() { return invoiceId; }
+    public int getCustomerId() {
+		return customerId;
+	}
+
+	public String getCustomerName() {
+		return customerName;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public String getDeliveryAddress() {
+		return deliveryAddress;
+	}
+
+	public double getShippingCharge() {
+		return shippingCharge;
+	}
+
+	public int getInvoiceId() { return invoiceId; }
     public int getOrderId() { return orderId; }
     public double getTotalAmount() { return totalAmount; }
+    
+    
 
-    @Override
+    public void setInvoiceId(int invoiceId) {
+		this.invoiceId = invoiceId;
+	}
+
+	public void setOrderId(int orderId) {
+		this.orderId = orderId;
+	}
+
+	public void setTotalAmount(double totalAmount) {
+		this.totalAmount = totalAmount;
+	}
+
+	public void setCustomerId(int customerId) {
+		this.customerId = customerId;
+	}
+
+	public void setCustomerName(String customerName) {
+		this.customerName = customerName;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public void setDeliveryAddress(String deliveryAddress) {
+		this.deliveryAddress = deliveryAddress;
+	}
+
+	public void setShippingCharge(double shippingCharge) {
+		this.shippingCharge = shippingCharge;
+	}
+
+	public void setItems(List<OrderItem> items) {
+		this.items = items;
+	}
+
+	@Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 

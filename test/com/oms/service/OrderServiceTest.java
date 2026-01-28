@@ -13,8 +13,6 @@ import com.oms.exception.OMSException;
 import com.oms.model.*;
 import com.oms.repository.InvoiceRepository;
 import com.oms.repository.OrderRepository;
-import com.oms.service.InventoryService;
-import com.oms.service.OrderService;
 
 public class OrderServiceTest {
 
@@ -28,116 +26,99 @@ public class OrderServiceTest {
         inventory = mock(InventoryService.class);
         orderRepo = mock(OrderRepository.class);
         invoiceRepo = mock(InvoiceRepository.class);
-
         orderService = new OrderService(inventory, orderRepo, invoiceRepo);
     }
 
     // --------------------------------------------------------
-    // TEST: createOrder()
+    // TEST: createOrderWithItems() → OFFLINE ORDER
     // --------------------------------------------------------
     @Test
-    public void testCreateOrder() {
+    public void testCreateOfflineOrderWithItems_generatesInvoice() throws OMSException {
+
         Customer c = new Customer(1, "Priya", "p@gmail.com", "9999", "BLR");
-        Order order = new OfflineOrder(10, c, "Store A");
+        Product p = new Product("P1", "Mouse", 500);
 
-        doNothing().when(orderRepo).addOrder(order);
+        OrderItem item = new OrderItem(p, 2);
+        List<OrderItem> items = List.of(item);
 
-        Order created = orderService.createOrder(order);
+        OfflineOrder order = new OfflineOrder(10, c, "Store A");
 
-        assertEquals(order, created);
+        when(invoiceRepo.generateInvoiceId()).thenReturn(1001);
+
+        Invoice invoice = orderService.createOrderWithItems(order, items);
+
+        assertNotNull(invoice);
+        assertEquals(1001, invoice.getInvoiceId());
+        assertEquals(10, invoice.getOrderId());
+        assertEquals(1000.0, invoice.getTotalAmount(), 0.01);
+
+        assertTrue(order.isCompleted());
+        assertTrue(order.isInvoiceGenerated());
+
+        verify(orderRepo, times(1)).addOrder(order);
+        verify(invoiceRepo, times(1)).addInvoice(any(Invoice.class));
+    }
+
+    // --------------------------------------------------------
+    // TEST: createOrderWithItems() → ONLINE ORDER
+    // --------------------------------------------------------
+    @Test
+    public void testCreateOnlineOrderWithItems_noInvoice() throws OMSException {
+
+        Customer c = new Customer(1, "Priya", "p@gmail.com", "9999", "BLR");
+        Product p = new Product("P1", "Laptop", 50000);
+
+        OrderItem item = new OrderItem(p, 1);
+        List<OrderItem> items = List.of(item);
+
+        OnlineOrder order = new OnlineOrder(20, c, "Bangalore", 100);
+
+        Invoice invoice = orderService.createOrderWithItems(order, items);
+
+        assertNull(invoice);
+        assertFalse(order.isCompleted());
+        assertFalse(order.isInvoiceGenerated());
+
         verify(orderRepo, times(1)).addOrder(order);
     }
 
     // --------------------------------------------------------
-    // TEST: addItemToOrder()
+    // TEST: updateDeliveryStatus() → DELIVERED
     // --------------------------------------------------------
     @Test
-    public void testAddItemToOrder_newItem() throws OMSException {
-
-        Product p = new Product("P1", "Laptop", 50000);
-        OrderItem item = new OrderItem(p, 2);
+    public void testUpdateDeliveryStatus_delivered_generatesInvoice() throws OMSException {
 
         Customer c = new Customer(1, "Priya", "p@gmail.com", "9999", "BLR");
-        Order order = new OfflineOrder(10, c, "StoreA");
-
-        when(orderRepo.getOrder(10)).thenReturn(order);
-        doNothing().when(inventory).hasStock("P1", 2);
-
-        orderService.addItemToOrder(10, item);
-
-        assertEquals(1, order.getItems().size());
-        assertEquals(2, order.getItems().get(0).getQuantity());
-    }
-
-    @Test
-    public void testAddItemToOrder_mergeQuantity() throws OMSException {
-
         Product p = new Product("P1", "Laptop", 50000);
-        OrderItem existing = new OrderItem(p, 1);
-        OrderItem newItem = new OrderItem(p, 3);
 
-        Customer c = new Customer(1, "Priya", "p@gmail.com", "9999", "BLR");
-        Order order = new OfflineOrder(10, c, "StoreA");
-        order.addItem(existing);
-
-        when(orderRepo.getOrder(10)).thenReturn(order);
-
-        doNothing().when(inventory).hasStock("P1", 4);
-
-        orderService.addItemToOrder(10, newItem);
-
-        assertEquals(4, existing.getQuantity());
-    }
-
-    // --------------------------------------------------------
-    // TEST: completeOrder()
-    // --------------------------------------------------------
-    @Test
-    public void testCompleteOrder_success() throws OMSException {
-
-        Customer c = new Customer(101, "Priya", "pri@gmail.com", "999", "BLR");
-
-        Product p = new Product("P1", "Laptop", 50000);
-        OrderItem item = new OrderItem(p, 2);
-
-        OnlineOrder order = new OnlineOrder(10, c, "Bangalore", 100);
+        OrderItem item = new OrderItem(p, 1);
+        OnlineOrder order = new OnlineOrder(30, c, "Bangalore", 100);
         order.addItem(item);
+        order.calculateTotal();
 
-        when(orderRepo.getOrder(10)).thenReturn(order);
+        when(orderRepo.getOrder(30)).thenReturn(order);
+        when(invoiceRepo.generateInvoiceId()).thenReturn(2001);
 
-        // Stock checks
-        doNothing().when(inventory).hasStock("P1", 2);
-        doNothing().when(inventory).reduceStock("P1", 2);
+        orderService.updateDeliveryStatus(30, "DELIVERED");
 
-        // Invoice generation
-        when(invoiceRepo.generateInvoiceId()).thenReturn(501);
-        doNothing().when(invoiceRepo).addInvoice(any(Invoice.class));
-
-        Invoice invoice = orderService.completeOrder(10);
-
-        assertNotNull(invoice);
-        assertEquals(501, invoice.getInvoiceId());
-        assertEquals(10, invoice.getOrderId());
-        assertEquals(100100, invoice.getTotalAmount(), 0.01);
-
+        assertTrue(order.isCompleted());
         assertTrue(order.isInvoiceGenerated());
+
+        verify(invoiceRepo, times(1)).addInvoice(any(Invoice.class));
     }
 
     // --------------------------------------------------------
-    // TEST: updateDeliveryStatus()
+    // TEST: updateDeliveryStatus() → NON-ONLINE ORDER
     // --------------------------------------------------------
-    @Test
-    public void testUpdateDeliveryStatus() throws OMSException {
+    @Test(expected = OMSException.class)
+    public void testUpdateDeliveryStatus_offlineOrder_throwsException() throws OMSException {
 
         Customer c = new Customer(1, "Priya", "p@gmail.com", "9999", "BLR");
+        Order order = new OfflineOrder(40, c, "Store X");
 
-        OnlineOrder order = spy(new OnlineOrder(10, c, "Bangalore", 100));
+        when(orderRepo.getOrder(40)).thenReturn(order);
 
-        when(orderRepo.getOrder(10)).thenReturn(order);
-
-        orderService.updateDeliveryStatus(10, "SHIPPED");
-
-        verify(order, times(1)).updateDeliveryStatus("SHIPPED");
+        orderService.updateDeliveryStatus(40, "DELIVERED");
     }
 
     // --------------------------------------------------------
@@ -148,7 +129,7 @@ public class OrderServiceTest {
 
         Map<Integer, Order> map = new HashMap<>();
         Customer c = new Customer(1, "Priya", "p@gmail.com", "9999", "BLR");
-        map.put(1, new OfflineOrder(1, c, "StoreX"));
+        map.put(1, new OfflineOrder(1, c, "Store X"));
 
         when(orderRepo.getAllOrders()).thenReturn(map);
 

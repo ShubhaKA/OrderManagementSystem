@@ -1,6 +1,8 @@
 package com.oms.service;
 
+import java.util.List;
 import java.util.Map;
+
 import com.oms.exception.NoOrdersException;
 import com.oms.exception.OMSException;
 import com.oms.model.*;
@@ -21,107 +23,103 @@ public class OrderService {
         this.invoiceRepo = invoiceRepo;
     }
 
+    // ---------------- GET ORDER ----------------
     public Order getOrder(int oid) {
         return orderRepo.getOrder(oid);
     }
 
-    public Order createOrder(Order o) {
-    	o.calculateTotal();
-        orderRepo.addOrder(o);
-        return o;
-    }
-
-    
-    public void addItemToOrder(int orderId, OrderItem item) throws OMSException {
-
-        Order order = orderRepo.getOrder(orderId);
-
-        if (order == null)
-            throw new OMSException("Order not found!");
-
-        if (order.isCompleted())
-            throw new OMSException("Cannot add items! Order is already completed.");
-
-        // Stock validation
-        if (!inventory.hasStock(item.getProduct().getProductId(), item.getQuantity()))
-            throw new OMSException("Not enough stock!");
-
-        order.addItem(item);
-        order.getTotalAmount();
-        
-        order.calculateTotal();
-
-    }
-
-    public Invoice completeOrder(int orderId) throws OMSException {
-
-        Order order = orderRepo.getOrder(orderId);
-        if (order == null) throw new OMSException("Order not found!");
-
-        if (order.isCompleted())
-            throw new OMSException("Order already completed!");
-        
-        if (order.isInvoiceGenerated()) {
-            throw new OMSException("Order already completed! Invoice already generated.");
-        }
-
-        // Reduce stock now
-        for (OrderItem item : order.getItems()) {
-            inventory.reduceStock(item.getProduct().getProductId(), item.getQuantity());
-        }
-
-        order.fulfillOrder();
-        order.setInvoiceGenerated(true);
-        order.setCompleted(true);
-
-        
-        Customer c = order.getCustomer();
-        String address = null;
-        double shipping = 0;
-
-        if (order instanceof OnlineOrder online) {
-            address = online.getDeliveryAddress();
-            shipping = online.getShippingCharge();
-        }
-
-        Invoice invoice = new Invoice(
-                invoiceRepo.generateInvoiceId(),
-                orderId,
-                order.getTotalAmount(),
-                c.getCustomerId(),
-                c.getName(),
-                c.getPhone(),
-                c.getEmail(),
-                address,
-                shipping
-        );
-
-        invoiceRepo.addInvoice(invoice);
-        order.setInvoiceGenerated(true);
-        return invoice;
-    }
-
-    
+    // ---------------- ALL ORDERS ----------------
     public Map<Integer, Order> getAllOrders() throws NoOrdersException {
         Map<Integer, Order> orders = orderRepo.getAllOrders();
-        if (orders == null || orders.isEmpty()) {
+        if (orders.isEmpty())
             throw new NoOrdersException("No orders available!");
-        }
         return orders;
     }
 
+    public Invoice createOrderWithItems(Order order, List<OrderItem> items) throws OMSException {
+
+        // 1. Just add items (stock already handled in Main)
+        for (OrderItem item : items) {
+            order.addItem(item);
+        }
+
+        // 2. Calculate total
+        order.calculateTotal();
+
+        // 3. Save order
+        orderRepo.addOrder(order);
+
+        // 4. OFFLINE → auto complete + invoice
+        if (order instanceof OfflineOrder) {
+            order.fulfillOrder();
+            order.setCompleted(true);
+
+            Customer c = order.getCustomer();
+            Invoice invoice = new Invoice(
+                    invoiceRepo.generateInvoiceId(),
+                    order.getOrderId(),
+                    order.getTotalAmount(),
+                    c.getCustomerId(),
+                    c.getName(),
+                    c.getPhone(),
+                    c.getEmail(),
+                    null,
+                    0,
+                    order.getItems() 
+            );
+
+            invoiceRepo.addInvoice(invoice);
+            order.setInvoiceGenerated(true);
+            return invoice;
+        }
+
+        return null;
+    }
     
     public void updateDeliveryStatus(int orderId, String status) throws OMSException {
 
         Order order = orderRepo.getOrder(orderId);
-
         if (order == null)
             throw new OMSException("Order not found!");
 
         if (!(order instanceof OnlineOrder))
-            throw new OMSException("Delivery status can be updated only for Online Orders!");
+            throw new OMSException("Only Online Orders have delivery status!");
 
         OnlineOrder online = (OnlineOrder) order;
         online.updateDeliveryStatus(status);
+
+        if (status.equalsIgnoreCase("DELIVERED")) {
+
+            if (!order.isInvoiceGenerated()) {
+
+                Customer c = order.getCustomer();
+
+                Invoice invoice = new Invoice(
+                        invoiceRepo.generateInvoiceId(),
+                        order.getOrderId(),
+                        order.getTotalAmount(),
+                        c.getCustomerId(),
+                        c.getName(),
+                        c.getPhone(),
+                        c.getEmail(),
+                        online.getDeliveryAddress(),
+                        online.getShippingCharge(),
+                        order.getItems()
+                );
+
+                invoiceRepo.addInvoice(invoice);
+                order.setInvoiceGenerated(true);
+
+                // ✅ ADD THIS
+                System.out.println(
+                    "Invoice Generated Successfully! Invoice ID: " +
+                    invoice.getInvoiceId()
+                );
+            }
+
+            order.setCompleted(true);
+            System.out.println("Order marked as COMPLETED.");
+        }
     }
+
 }

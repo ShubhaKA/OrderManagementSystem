@@ -1,5 +1,6 @@
 package com.oms.service;
 
+import com.oms.exception.OMSException;
 import com.oms.repository.InventoryRepository;
 
 public class InventoryService {
@@ -16,8 +17,8 @@ public class InventoryService {
     }
 
     // REDUCE STOCK AFTER ORDER COMPLETION
-    public void reduceStock(String productId, int qty) {
-        inventoryRepo.reduceStock(productId, qty);
+    public boolean reduceStock(String productId, int qty) {
+        return inventoryRepo.reduceStock(productId, qty);
     }
 
  // Get available quantity

@@ -32,17 +32,19 @@ public class OnlineOrder extends Order {
     }
 
     public void updateDeliveryStatus(String newStatus) {
-
         this.deliveryStatus = newStatus;
-        trackingUpdates.add("Status updated to " + newStatus + " at " + new Date());
 
-        // sync main order status
-        //updateStatus(newStatus);
+        updateStatus(newStatus); // sync Order.status also
+
+        trackingUpdates.add(
+            "Status updated to " + newStatus + " at " + new Date()
+        );
 
         if (newStatus.equalsIgnoreCase("DELIVERED")) {
             setCompleted(true);
         }
     }
+
 
     @Override
     public String toString() {

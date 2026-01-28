@@ -59,11 +59,10 @@ public abstract class Order {
                 .sum();
     }
 
-	/*
-	 * public void updateStatus(String newStatus) { this.status = newStatus;
-	 * trackingUpdates.add("Order status changed to: " + newStatus + " on " + new
-	 * Date()); }
-	 */
+	  public void updateStatus(String newStatus) { 
+		  this.status = newStatus;
+	   }
+	 
 
     public abstract void fulfillOrder();
 
